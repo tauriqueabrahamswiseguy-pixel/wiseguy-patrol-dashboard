@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>WiseGuy Guard Patrol — Missed Patrol Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"/>
+<style>
+:root{
+  --red:#c0392b;--red-bright:#e74c3c;--red-dim:#7b1515;
+  --night:#7986cb;--day:#ffa726;
+  --bg:#0a0a0a;--bg2:#111;--bg3:#161616;--bg4:#1e1e1e;
+  --border:#1e1e1e;--border2:#252525;
+  --text:#e0e0e0;--text2:#999;--text3:#555;--text4:#333;
+  --font:'IBM Plex Sans',sans-serif;--mono:'IBM Plex Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:4px}
+
+/* LOGIN */
+.login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg);background-image:radial-gradient(circle at 20% 50%,#1a0505 0%,transparent 50%),radial-gradient(circle at 80% 20%,#0a0a1a 0%,transparent 40%)}
+.login-card{width:360px;background:var(--bg3);border:0.5px solid #2a2a2a;border-radius:12px;padding:2.5rem;display:flex;flex-direction:column;gap:1.25rem;box-shadow:0 0 60px #c0392b18}
+.login-brand{display:flex;align-items:center;gap:14px}
+.login-icon{width:48px;height:48px;background:var(--red);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.login-title{font-size:20px;font-weight:600;letter-spacing:-0.3px}
+.login-sub{font-size:11px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+.field label{font-size:11px;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;display:block;margin-bottom:6px}
+.field input{width:100%;background:var(--bg4);border:0.5px solid #2a2a2a;color:var(--text);padding:10px 13px;border-radius:7px;font-size:13px;font-family:var(--font);outline:none;transition:border-color .2s}
+.field input:focus{border-color:#c0392b66}
+.login-btn{width:100%;background:var(--red);color:#fff;border:none;padding:12px;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);letter-spacing:.3px;transition:background .2s}
+.login-btn:hover{background:var(--red-bright)}
+.login-err{font-size:12px;color:var(--red-bright);text-align:center;display:none}
+.login-hint{font-size:11px;color:var(--text4);text-align:center}
+
+/* TOPBAR */
+.topbar{background:var(--bg2);border-bottom:1px solid #c0392b33;height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;position:sticky;top:0;z-index:100}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-icon{width:36px;height:36px;background:var(--red);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.brand-name{font-size:15px;font-weight:600;letter-spacing:-.2px}
+.brand-tag{font-size:10px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase}
+.topbar-right{display:flex;align-items:center;gap:14px}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#27ae60;animation:pulse 2s infinite;display:inline-block;margin-right:5px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.live-label{font-size:11px;color:var(--text3)}
+.countdown{font-family:var(--mono);font-size:11px;color:var(--text4)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 13px;border-radius:7px;font-size:12px;font-family:var(--font);cursor:pointer;border:none;font-weight:500;transition:all .15s}
+.btn-red{background:var(--red);color:#fff}.btn-red:hover{background:var(--red-bright)}
+.btn-ghost{background:var(--bg4);color:var(--text2);border:0.5px solid var(--border2)}.btn-ghost:hover{color:var(--text)}
+
+/* LAYOUT */
+.app{display:none;flex-direction:column;min-height:100vh}
+.main{padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem;max-width:1400px;width:100%;margin:0 auto}
+
+/* TABS */
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{padding:6px 14px;border-radius:7px;font-size:12px;font-weight:500;background:var(--bg3);color:var(--text3);border:0.5px solid var(--border2);cursor:pointer;font-family:var(--font);transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.tab:hover{color:var(--text)}
+.tab.active{background:var(--red);color:#fff;border-color:var(--red)}
+
+/* ALERT BAR */
+.alert-bar{background:#1a0707;border:0.5px solid #c0392b55;border-radius:10px;padding:12px 16px;display:flex;align-items:flex-start;gap:12px}
+.alert-bar i{color:var(--red-bright);font-size:20px;flex-shrink:0;margin-top:1px}
+.alert-title{font-size:13px;color:var(--red-bright);font-weight:600}
+.alert-sub{font-size:11px;color:#7a2525;margin-top:3px}
+
+/* STAT GRID */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stat-card{background:var(--bg3);border:0.5px solid var(--border2);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden;transition:border-color .2s}
+.stat-card:hover{border-color:#3a3a3a}
+.stat-card.s-red{border-left:3px solid var(--red);border-color:var(--red-dim)}
+.stat-card.s-blue{border-left:3px solid var(--night);border-color:#7986cb44}
+.stat-card.s-gold{border-left:3px solid var(--day);border-color:#ffa72644}
+.stat-label{font-size:10px;color:var(--text3);letter-spacing:.6px;text-transform:uppercase;margin-bottom:6px}
+.stat-val{font-size:28px;font-weight:600;font-family:var(--mono);line-height:1;color:var(--text)}
+.stat-val.v-red{color:var(--red-bright)}
+.stat-val.v-blue{color:var(--night)}
+.stat-val.v-gold{color:var(--day)}
+.stat-sub{font-size:10px;color:var(--text4);margin-top:5px}
+.live-badge{display:inline-block;background:#0f2a0f;color:#4caf50;border:0.5px solid #4caf5044;padding:1px 7px;border-radius:20px;font-size:9px;font-weight:600;letter-spacing:.5px;margin-left:6px;vertical-align:middle}
+
+/* PANEL */
+.panel{background:var(--bg3);border:0.5px solid var(--border2);border-radius:10px;padding:1rem 1.25rem}
+.panel-title{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+.panel-title i{color:var(--red);font-size:16px}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:640px){.r2{grid-template-columns:1fr}}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;max-height:360px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{font-size:10px;color:var(--text4);text-transform:uppercase;letter-spacing:.7px;padding:7px 8px;border-bottom:0.5px solid #1a1a1a;font-weight:500;text-align:left;background:var(--bg3);position:sticky;top:0;z-index:1}
+td{padding:7px 8px;border-bottom:0.5px solid #161616;color:var(--text2);vertical-align:middle}
+tr:hover td{background:#1a1a1a}
+tr:last-child td{border-bottom:none}
+.pill{background:var(--bg4);color:#ccc;padding:2px 7px;border-radius:4px;font-size:11px;border:0.5px solid var(--border2);display:inline-block;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
+.badge-night{background:#1a1a2e;color:var(--night);padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600}
+.badge-day{background:#1a1300;color:var(--day);padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600}
+.badge-missed{background:#2a0f0f;color:var(--red-bright);padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600}
+.t-red{color:var(--red-bright);font-weight:600;font-family:var(--mono)}
+
+/* CONTROLS */
+.ctrl-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:1rem}
+.ctrl-input{background:var(--bg4);border:0.5px solid var(--border2);color:var(--text);padding:7px 10px;border-radius:7px;font-size:12px;font-family:var(--font);outline:none}
+.ctrl-input:focus{border-color:#c0392b55}
+
+/* BAR CHART */
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.bar-label{font-size:11px;color:var(--text3);width:155px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{flex:1;height:13px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;transition:width .6s ease}
+.bar-val{font-size:11px;color:var(--text4);width:28px;text-align:right;flex-shrink:0;font-family:var(--mono)}
+
+/* HEATMAP */
+.hm-row{display:flex;gap:3px;align-items:center;margin-bottom:3px}
+.hm-label{font-size:10px;color:var(--text4);width:130px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hm-cell{width:22px;height:18px;border-radius:3px;font-size:8px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;cursor:default;font-family:var(--mono)}
+
+/* TOP SITES */
+.top-site{display:flex;align-items:center;justify-content:space-between;background:var(--bg4);border-radius:7px;padding:8px 12px;border:0.5px solid var(--border2);margin-bottom:6px}
+.top-site-name{font-size:12px;color:var(--text2)}
+.top-site-count{font-size:12px;font-weight:600;font-family:var(--mono);color:var(--red-bright);background:#2a0f0f;padding:2px 8px;border-radius:4px}
+
+/* 7-DAY SUMMARY CARDS */
+.day-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.day-card{background:var(--bg3);border:0.5px solid var(--border2);border-radius:8px;padding:10px 12px}
+.day-card-date{font-size:10px;color:var(--text4);margin-bottom:6px;font-family:var(--mono)}
+.day-card-vals{display:flex;gap:12px}
+.dcv{display:flex;flex-direction:column;gap:2px}
+.dcv-lbl{font-size:9px;letter-spacing:.5px;text-transform:uppercase}
+.dcv-num{font-size:18px;font-weight:600;font-family:var(--mono);color:var(--text2)}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinning{animation:spin .8s linear infinite}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-page" id="loginPage">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="login-icon"><i class="ti ti-shield-check" style="color:#fff"></i></div>
+      <div>
+        <div class="login-title">WiseGuy Guard</div>
+        <div class="login-sub">Patrol Monitor</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Username</label>
+      <input type="text" id="un" placeholder="admin" autocomplete="username"/>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="pw" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
+    </div>
+    <div class="login-err" id="lerr">Invalid credentials. Please try again.</div>
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="login-hint">admin &nbsp;/&nbsp; wiseguy2024</div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="app" id="appPage">
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-icon"><i class="ti ti-shield-check" style="color:#fff"></i></div>
+      <div>
+        <div class="brand-name">WiseGuy Guard Patrol</div>
+        <div class="brand-tag">Missed Patrol Monitor</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span class="live-label"><span class="live-dot"></span>Gmail connected</span>
+      <span class="countdown" id="cd">10:00</span>
+      <button class="btn btn-red" onclick="doSync()"><i class="ti ti-refresh" id="syncIcon"></i> Sync Now</button>
+      <button class="btn btn-ghost" onclick="doLogout()"><i class="ti ti-logout"></i></button>
+    </div>
+  </div>
+  <div class="main" id="mainContent"></div>
+</div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+const TODAY = '2026-05-13', YESTERDAY = '2026-05-12';
+
+const TOTALS = {
+  '2026-05-13': {night:204, day:18},
+  '2026-05-12': {night:289, day:157},
+  '2026-05-11': {night:294, day:313},
+  '2026-05-10': {night:135, day:242},
+  '2026-05-09': {night:32,  day:16},
+  '2026-05-08': {night:59,  day:9},
+  '2026-05-07': {night:106, day:19},
+  '2026-05-06': {night:0,   day:30},
+};
+
+const DAY_TODAY = [
+  {site:'PONDS',time:'07:00'},
+  {site:'GUSTROUW SPORTSFIELD',time:'07:00'},
+  {site:'WESTRIDGE COLLECTIONS',time:'09:00'},
+  {site:'Green Point Bowling Club',time:'09:00'},
+  {site:'KHAYELITSHA CEMETERY',time:'10:00'},
+  {site:'KHAYELITSHA CEMETERY',time:'10:30'},
+  {site:'KHAYELITSHA CEMETERY',time:'11:00'},
+  {site:'EASTRIDGE CLINIC',time:'11:00'},
+  {site:'WESTRIDGE COLLECTIONS',time:'11:00'},
+  {site:'KHAYELITSHA CEMETERY',time:'11:30'},
+  {site:'KHAYELITSHA CEMETERY',time:'12:00'},
+  {site:'KHAYELITSHA CEMETERY',time:'12:30'},
+  {site:'KHAYELITSHA CEMETERY',time:'13:00'},
+  {site:'EASTRIDGE CLINIC',time:'13:00'},
+  {site:'WESTRIDGE COLLECTIONS',time:'13:00'},
+  {site:'NMFYC SDECD',time:'13:00'},
+  {site:'PRV PUMP',time:'13:00'},
+  {site:'KHAYELITSHA CEMETERY',time:'13:30'},
+].map(a=>({...a,date:TODAY,shift:'day',status:'Missed'}));
+
+const NIGHT_TODAY = [
+  {site:'WATERWORKS COTTAGES',time:'00:00'},{site:"GORDON'S BAY WWTW",time:'00:00'},
+  {site:"GORDON'S BAY WWTW",time:'00:30'},{site:'THE FARM RECREATIONAL HALL',time:'00:30'},
+  {site:"GORDON'S BAY WWTW",time:'01:00'},{site:'THE FARM RECREATIONAL HALL',time:'01:00'},
+  {site:'PONDS',time:'01:00'},{site:"GORDON'S BAY WWTW",time:'01:30'},
+  {site:'THE FARM RECREATIONAL HALL',time:'01:30'},{site:"GORDON'S BAY WWTW",time:'02:00'},
+  {site:'THE FARM RECREATIONAL HALL',time:'02:00'},{site:'TOWERS',time:'02:00'},
+  {site:'PONDS',time:'02:00'},{site:"GORDON'S BAY WWTW",time:'02:30'},
+  {site:'THE FARM RECREATIONAL HALL',time:'02:30'},{site:"GORDON'S BAY WWTW",time:'03:00'},
+  {site:'THE FARM RECREATIONAL HALL',time:'03:00'},{site:'NMFYC PARKS & REC',time:'03:00'},
+  {site:'NMFYC SDECD',time:'03:00'},{site:'LUCANON PUMP',time:'03:00'},
+  {site:'Aloe Ridge Phase 1',time:'03:00'},{site:'PONDS',time:'03:00'},
+  {site:"GORDON'S BAY WWTW",time:'03:30'},{site:'THE FARM RECREATIONAL HALL',time:'03:30'},
+  {site:'LUCANON PUMP',time:'03:30'},{site:'Aloe Ridge Phase 1',time:'03:30'},
+  {site:'Aloe Ridge Phase 2',time:'03:30'},{site:'SWARTKLIP SPORTSFIELD',time:'03:30'},
+  {site:'PONDS',time:'04:00'},{site:"GORDON'S BAY WWTW",time:'04:00'},
+  {site:'THE FARM RECREATIONAL HALL',time:'04:00'},{site:'LUCANON PUMP',time:'04:00'},
+  {site:'Aloe Ridge Phase 1',time:'04:00'},{site:'Aloe Ridge Phase 2',time:'04:00'},
+  {site:'SWARTKLIP SPORTSFIELD',time:'04:00'},{site:'Bokaap Park',time:'04:00'},
+  {site:'Harmony Park Resort',time:'04:00'},{site:'THE FARM RECREATIONAL HALL',time:'04:30'},
+  {site:'Aloe Ridge Phase 1',time:'04:30'},{site:'LUCANON PUMP',time:'04:30'},
+  {site:'SWARTKLIP SPORTSFIELD',time:'04:30'},{site:'EASTRIDGE CLINIC',time:'04:30'},
+  {site:'PONDS',time:'05:00'},{site:'Harmony Park Resort',time:'05:00'},
+  {site:'NMFYC PARKS & REC',time:'05:00'},{site:'NMFYC SDECD',time:'05:00'},
+  {site:'THE FARM RECREATIONAL HALL',time:'05:00'},{site:'EASTRIDGE CLINIC',time:'05:00'},
+  {site:'Aloe Ridge Phase 1',time:'05:00'},{site:'Aloe Ridge Phase 2',time:'05:00'},
+  {site:'LUCANON PUMP',time:'05:00'},
+].map(a=>({...a,date:TODAY,shift:'night',status:'Missed'}));
+
+const NIGHT_YEST = [
+  {site:'Sea Point',time:'21:00'},{site:'Sea Point',time:'21:30'},{site:'Sea Point',time:'22:00'},
+  {site:'WATERWORKS COTTAGES',time:'21:00'},{site:'WATERWORKS COTTAGES',time:'21:30'},
+  {site:'WATERWORKS COTTAGES',time:'22:00'},{site:'WATERWORKS COTTAGES',time:'22:30'},{site:'WATERWORKS COTTAGES',time:'23:00'},
+  {site:"GORDON'S BAY WWTW",time:'21:30'},{site:"GORDON'S BAY WWTW",time:'22:00'},
+  {site:"GORDON'S BAY WWTW",time:'22:30'},{site:"GORDON'S BAY WWTW",time:'23:00'},{site:"GORDON'S BAY WWTW",time:'23:30'},
+  {site:'THE FARM RECREATIONAL HALL',time:'20:30'},{site:'THE FARM RECREATIONAL HALL',time:'21:00'},
+  {site:'THE FARM RECREATIONAL HALL',time:'21:30'},{site:'THE FARM RECREATIONAL HALL',time:'22:00'},
+  {site:'THE FARM RECREATIONAL HALL',time:'22:30'},{site:'THE FARM RECREATIONAL HALL',time:'23:00'},
+  {site:'PONDS',time:'20:00'},{site:'PONDS',time:'21:00'},{site:'PONDS',time:'22:00'},{site:'PONDS',time:'23:00'},
+  {site:'Aloe Ridge Phase 1',time:'21:00'},{site:'Aloe Ridge Phase 1',time:'21:30'},{site:'Aloe Ridge Phase 1',time:'22:00'},
+  {site:'TOWERS',time:'21:00'},{site:'LUCANON PUMP',time:'20:30'},{site:'LUCANON PUMP',time:'21:00'},
+  {site:'LUCANON PUMP',time:'21:30'},{site:'LUCANON PUMP',time:'22:00'},
+  {site:'SEWER 1',time:'21:00'},{site:'SEWER 1',time:'21:30'},{site:'SEWER 1',time:'22:00'},
+  {site:'SEWER 2',time:'20:30'},{site:'SEWER 2',time:'21:00'},{site:'SEWER 2',time:'21:30'},{site:'SEWER 2',time:'22:00'},
+  {site:'CLEANSING MAIN GATE',time:'20:30'},{site:'CLEANSING MAIN GATE',time:'21:00'},
+  {site:'CLEANSING MAIN GATE',time:'21:30'},{site:'CLEANSING MAIN GATE',time:'22:00'},
+  {site:'CLEANSING BAG STORE',time:'20:30'},{site:'CLEANSING BAG STORE',time:'21:00'},
+  {site:'CLEANSING BAG STORE',time:'21:30'},{site:'CLEANSING BAG STORE',time:'22:00'},
+  {site:'KHAYELITSHA CEMETERY',time:'21:00'},
+  {site:'Green Point Bowling Club',time:'21:00'},{site:'Green Point Bowling Club',time:'21:30'},{site:'Green Point Bowling Club',time:'22:00'},
+  {site:'WESTRIDGE COLLECTIONS',time:'20:30'},{site:'WESTRIDGE COLLECTIONS',time:'21:00'},
+  {site:'WESTRIDGE COLLECTIONS',time:'21:30'},{site:'WESTRIDGE COLLECTIONS',time:'22:00'},
+  {site:'NMFYC PARKS & REC',time:'21:00'},{site:'Harmony Park Resort',time:'21:00'},
+  {site:'Harmony Park Day Camp',time:'22:30'},{site:'HENDON PARK RESORT',time:'20:00'},
+].map(a=>({...a,date:YESTERDAY,shift:'night',status:'Missed'}));
+
+const DAY_YEST = [
+  {site:'Swartklip Sportsfield',time:'07:00'},{site:'Portlands SportsField',time:'07:00'},
+  {site:'Waterworks Cottages',time:'07:30'},{site:'Aloe Ridge Phase 1',time:'08:00'},
+  {site:'Aloe Ridge Phase 2',time:'08:00'},{site:'Gordons Bay WWTW',time:'09:00'},
+  {site:'Sea Point',time:'09:30'},{site:'Khayelitsha Cemetery',time:'10:00'},
+  {site:'Towers',time:'10:00'},{site:'Green Point Bowling Club',time:'11:00'},
+  {site:'Cleansing Main Gate',time:'11:00'},{site:'Portlands Depot',time:'12:00'},
+  {site:'Day shift sewer',time:'12:30'},{site:'NMFYC SDECD DAY',time:'13:00'},
+  {site:'Sea Point',time:'14:00'},{site:'Portlands SportsField',time:'15:00'},
+  {site:'Waterworks Cottages',time:'16:00'},{site:'Swartklip Sportsfield',time:'17:00'},
+].map(a=>({...a,date:YESTERDAY,shift:'day',status:'Missed'}));
+
+const ALL_ALERTS = [...NIGHT_TODAY,...DAY_TODAY,...NIGHT_YEST,...DAY_YEST];
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let activeTab = 'overview';
+let search = '', filterDate = '', filterShift = 'all';
+let cdSecs = 600, cdTimer;
+
+// ─── UTILS ───────────────────────────────────────────────────────────────────
+function siteStats(arr){
+  const m={};arr.forEach(a=>{m[a.site]=(m[a.site]||0)+1});
+  return Object.entries(m).sort((a,b)=>b[1]-a[1]);
+}
+
+// ─── AUTH ────────────────────────────────────────────────────────────────────
+function doLogin(){
+  const u=document.getElementById('un').value;
+  const p=document.getElementById('pw').value;
+  if(u==='admin'&&p==='wiseguy2024'){
+    document.getElementById('loginPage').style.display='none';
+    document.getElementById('appPage').style.display='flex';
+    startCountdown();
+    renderTab();
+  } else {
+    document.getElementById('lerr').style.display='block';
+  }
+}
+function doLogout(){
+  document.getElementById('appPage').style.display='none';
+  document.getElementById('loginPage').style.display='flex';
+  clearInterval(cdTimer);
+}
+
+// ─── COUNTDOWN ───────────────────────────────────────────────────────────────
+function startCountdown(){
+  clearInterval(cdTimer);cdSecs=600;
+  cdTimer=setInterval(()=>{
+    cdSecs--;if(cdSecs<0)cdSecs=600;
+    const m=Math.floor(cdSecs/60),s=cdSecs%60;
+    const el=document.getElementById('cd');
+    if(el)el.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  },1000);
+}
+function doSync(){
+  const i=document.getElementById('syncIcon');
+  if(i){i.classList.add('spinning');setTimeout(()=>i.classList.remove('spinning'),1500);}
+  cdSecs=600;
+}
+
+// ─── ROUTING ─────────────────────────────────────────────────────────────────
+function setTab(t){activeTab=t;renderTab();}
+function renderTab(){
+  const c=document.getElementById('mainContent');
+  const tabs=[
+    {id:'overview',icon:'ti-layout-dashboard',l:'Overview'},
+    {id:'nightshift',icon:'ti-moon',l:'Night Shift'},
+    {id:'dayshift',icon:'ti-sun',l:'Day Shift'},
+    {id:'allrecords',icon:'ti-table',l:'All Records'},
+    {id:'analytics',icon:'ti-chart-bar',l:'Analytics'},
+  ];
+  const tabHtml=tabs.map(t=>`<button class="tab ${activeTab===t.id?'active':''}" onclick="setTab('${t.id}')"><i class="ti ${t.icon}"></i>${t.l}</button>`).join('');
+
+  let content='';
+  if(activeTab==='overview') content=renderOverview();
+  else if(activeTab==='nightshift') content=renderShift('night');
+  else if(activeTab==='dayshift') content=renderShift('day');
+  else if(activeTab==='allrecords') content=renderAll();
+  else if(activeTab==='analytics') content=renderAnalytics();
+
+  c.innerHTML=`<div class="tabs">${tabHtml}</div>${content}`;
+  setTimeout(drawChart,80);
+}
+
+// ─── OVERVIEW ────────────────────────────────────────────────────────────────
+function renderOverview(){
+  const tn=TOTALS[TODAY].night, td=TOTALS[TODAY].day;
+  const yn=TOTALS[YESTERDAY].night, yd=TOTALS[YESTERDAY].day;
+  const todayTotal=tn+td, yestTotal=yn+yd;
+  const topToday=siteStats([...NIGHT_TODAY,...DAY_TODAY]);
+  const recentDay=[...DAY_TODAY].reverse().slice(0,8);
+
+  const dayCards=Object.entries(TOTALS).reverse().map(([d,v])=>`
+    <div class="day-card">
+      <div class="day-card-date">${d.slice(5)}</div>
+      <div class="day-card-vals">
+        <div class="dcv"><div class="dcv-lbl" style="color:var(--night)">Night</div><div class="dcv-num">${v.night||'—'}</div></div>
+        <div class="dcv"><div class="dcv-lbl" style="color:var(--day)">Day</div><div class="dcv-num">${v.day||'—'}</div></div>
+      </div>
+    </div>`).join('');
+
+  return `
+  <div class="alert-bar">
+    <i class="ti ti-alert-triangle"></i>
+    <div>
+      <div class="alert-title">May 13 — Night shift complete &nbsp;·&nbsp; Day shift in progress <span class="live-badge">LIVE</span></div>
+      <div class="alert-sub">Night (May 12 18:00 → May 13 06:00): <strong style="color:var(--night)">${tn}</strong> missed &nbsp;&nbsp;·&nbsp;&nbsp; Day (06:00 → 18:00): <strong style="color:var(--day)">${td}</strong> confirmed so far</div>
+    </div>
+  </div>
+
+  <div>
+    <div style="font-size:10px;color:var(--text4);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:8px">Today — May 13, 2026</div>
+    <div class="stat-grid">
+      <div class="stat-card s-blue">
+        <div class="stat-label">Night Shift ✓</div>
+        <div class="stat-val v-blue">${tn}</div>
+        <div class="stat-sub">May 12 18:00 → May 13 06:00</div>
+      </div>
+      <div class="stat-card s-gold">
+        <div class="stat-label">Day Shift <span class="live-badge">LIVE</span></div>
+        <div class="stat-val v-gold">${td}</div>
+        <div class="stat-sub">06:00 → 18:00 · still counting</div>
+      </div>
+      <div class="stat-card s-red">
+        <div class="stat-label">Today Total</div>
+        <div class="stat-val v-red">${todayTotal}</div>
+        <div class="stat-sub">night + day so far</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Yesterday Night</div>
+        <div class="stat-val">${yn}</div>
+        <div class="stat-sub">May 11 18:00 → May 12 06:00</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Yesterday Day</div>
+        <div class="stat-val">${yd}</div>
+        <div class="stat-sub">May 12 06:00 → 18:00</div>
+      </div>
+      <div class="stat-card s-red">
+        <div class="stat-label">Yesterday Total</div>
+        <div class="stat-val v-red">${yestTotal}</div>
+        <div class="stat-sub">night ${yn} + day ${yd}</div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div style="font-size:10px;color:var(--text4);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:8px">7-Day Summary</div>
+    <div class="day-cards">${dayCards}</div>
+  </div>
+
+  <div class="r2">
+    <div class="panel">
+      <div class="panel-title"><i class="ti ti-trophy"></i>Top Problem Sites — Today</div>
+      ${topToday.slice(0,6).map((s,i)=>`
+      <div class="top-site">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:10px;color:var(--text4);width:14px;font-family:var(--mono)">${i+1}</span>
+          <span class="top-site-name">${s[0]}</span>
+        </div>
+        <span class="top-site-count">${s[1]}</span>
+      </div>`).join('')}
+    </div>
+    <div class="panel">
+      <div class="panel-title"><i class="ti ti-chart-line"></i>7-Day Trend</div>
+      <canvas id="trendChart" height="180" style="width:100%"></canvas>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title"><i class="ti ti-bell"></i>Latest Day Shift Alerts — Today</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Site</th><th>Missed Time</th><th>Date</th><th>Status</th></tr></thead>
+        <tbody>${recentDay.map(r=>`
+        <tr>
+          <td><span class="pill">${r.site}</span></td>
+          <td class="t-red">${r.time}</td>
+          <td style="color:var(--text4);font-family:var(--mono);font-size:11px">${r.date}</td>
+          <td><span class="badge-missed">Missed</span></td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+// ─── SHIFT TAB ───────────────────────────────────────────────────────────────
+function renderShift(sh){
+  const isNight=sh==='night';
+  const todayRecs=isNight?NIGHT_TODAY:DAY_TODAY;
+  const yestRecs=isNight?NIGHT_YEST:DAY_YEST;
+  const tTotal=TOTALS[TODAY][sh], yTotal=TOTALS[YESTERDAY][sh];
+  const isLive=sh==='day';
+
+  let rows=[...todayRecs,...yestRecs];
+  if(search) rows=rows.filter(r=>r.site.toLowerCase().includes(search.toLowerCase()));
+  if(filterDate) rows=rows.filter(r=>r.date===filterDate);
+
+  const top=siteStats(rows);
+
+  return `
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:.75rem">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span class="${isNight?'badge-night':'badge-day'}" style="font-size:13px;padding:5px 14px">${isNight?'Night Shift — 18:00 → 06:00':'Day Shift — 06:00 → 18:00'}</span>
+      ${isLive?'<span class="live-badge">LIVE</span>':''}
+    </div>
+    <span style="font-size:12px;color:var(--text3)">Today: <strong style="color:var(--red-bright)">${tTotal}${isLive?' so far':''}</strong> &nbsp;·&nbsp; Yesterday: <strong style="color:var(--red-bright)">${yTotal}</strong></span>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-card s-red"><div class="stat-label">Today May 13</div><div class="stat-val v-red">${tTotal}</div><div class="stat-sub">${isLive?'shift ends 18:00':'confirmed complete'}</div></div>
+    <div class="stat-card"><div class="stat-label">Yesterday May 12</div><div class="stat-val">${yTotal}</div></div>
+    <div class="stat-card"><div class="stat-label">Worst Site</div><div class="stat-val" style="font-size:14px">${top[0]?top[0][0]:'—'}</div><div class="stat-sub">${top[0]?top[0][1]+' alerts':''}</div></div>
+    <div class="stat-card"><div class="stat-label">Records Loaded</div><div class="stat-val">${rows.length}</div></div>
+  </div>
+
+  <div class="ctrl-row">
+    <input class="ctrl-input" placeholder="Search site..." value="${search}" oninput="search=this.value;renderTab()" style="width:160px"/>
+    <input class="ctrl-input" type="date" value="${filterDate}" onchange="filterDate=this.value;renderTab()"/>
+    <button class="btn btn-ghost" onclick="search='';filterDate='';renderTab()">Clear</button>
+    <button class="btn btn-red" onclick="exportCSV('${sh}')"><i class="ti ti-download"></i> Export CSV</button>
+    <span style="font-size:11px;color:var(--text4);margin-left:auto">${rows.length} records</span>
+  </div>
+
+  <div class="panel">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Date</th><th>Site</th><th>Missed Time</th><th>Guard</th><th>Status</th></tr></thead>
+        <tbody>${rows.map(r=>`
+        <tr>
+          <td style="font-family:var(--mono);font-size:11px;color:var(--text4)">${r.date}</td>
+          <td><span class="pill">${r.site}</span></td>
+          <td class="t-red">${r.time}</td>
+          <td style="color:var(--text4)">—</td>
+          <td><span class="badge-missed">Missed</span></td>
+        </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+// ─── ALL RECORDS ─────────────────────────────────────────────────────────────
+function renderAll(){
+  let rows=[...ALL_ALERTS];
+  if(search) rows=rows.filter(r=>r.site.toLowerCase().includes(search.toLowerCase()));
+  if(filterDate) rows=rows.filter(r=>r.date===filterDate);
+  if(filterShift!=='all') rows=rows.filter(r=>r.shift===filterShift);
+
+  return `
+  <div class="ctrl-row">
+    <input class="ctrl-input" placeholder="Search site..." value="${search}" oninput="search=this.value;renderTab()" style="width:160px"/>
+    <input class="ctrl-input" type="date" value="${filterDate}" onchange="filterDate=this.value;renderTab()"/>
+    <select class="ctrl-input" onchange="filterShift=this.value;renderTab()">
+      <option value="all" ${filterShift==='all'?'selected':''}>All Shifts</option>
+      <option value="night" ${filterShift==='night'?'selected':''}>Night Shift</option>
+      <option value="day" ${filterShift==='day'?'selected':''}>Day Shift</option>
+    </select>
+    <button class="btn btn-ghost" onclick="search='';filterDate='';filterShift='all';renderTab()">Clear</button>
+    <button class="btn btn-red" onclick="exportCSV('all')"><i class="ti ti-download"></i> Export CSV</button>
+    <span style="font-size:11px;color:var(--text4);margin-left:auto">${rows.length} records</span>
+  </div>
+  <div class="panel">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Date</th><th>Site</th><th>Time</th><th>Shift</th><th>Guard</th><th>Status</th></tr></thead>
+        <tbody>${rows.map(r=>`
+        <tr>
+          <td style="font-family:var(--mono);font-size:11px;color:var(--text4)">${r.date}</td>
+          <td><span class="pill">${r.site}</span></td>
+          <td class="t-red">${r.time}</td>
+          <td><span class="${r.shift==='night'?'badge-night':'badge-day'}">${r.shift==='night'?'Night':'Day'}</span></td>
+          <td style="color:var(--text4)">—</td>
+          <td><span class="badge-missed">Missed</span></td>
+        </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+// ─── ANALYTICS ───────────────────────────────────────────────────────────────
+function renderAnalytics(){
+  const sS=siteStats(ALL_ALERTS), maxS=sS[0]?sS[0][1]:1;
+  const dates=['2026-05-06','2026-05-07','2026-05-08','2026-05-09','2026-05-10','2026-05-11','2026-05-12','2026-05-13'];
+  const top8=sS.slice(0,8).map(s=>s[0]);
+
+  return `
+  <div class="r2">
+    <div class="panel">
+      <div class="panel-title"><i class="ti ti-chart-bar"></i>Missed Patrols by Site</div>
+      ${sS.slice(0,12).map(([s,c])=>`
+      <div class="bar-row">
+        <div class="bar-label">${s}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.round(c/maxS*100)}%;background:var(--red)"></div></div>
+        <div class="bar-val">${c}</div>
+      </div>`).join('')}
+    </div>
+    <div class="panel">
+      <div class="panel-title"><i class="ti ti-chart-line"></i>7-Day Trend</div>
+      <canvas id="trendChart" height="180" style="width:100%"></canvas>
+      <div style="margin-top:14px">
+        ${dates.map(d=>{const v=TOTALS[d]||{night:0,day:0};const tot=v.night+v.day;return`
+        <div class="bar-row">
+          <div class="bar-label" style="width:55px;font-family:var(--mono);font-size:10px">${d.slice(5)}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${Math.round(tot/700*100)}%;background:var(--night)"></div></div>
+          <div class="bar-val">${tot||'—'}</div>
+        </div>`;}).join('')}
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title"><i class="ti ti-calendar"></i>Site Patrol Failure Heatmap — Last 7 Days</div>
+    <div style="overflow-x:auto">
+      <div style="display:flex;gap:3px;padding-left:133px;margin-bottom:5px">
+        ${dates.map(d=>`<div style="width:22px;font-size:9px;color:var(--text4);text-align:center;flex-shrink:0;font-family:var(--mono)">${d.slice(8)}</div>`).join('')}
+      </div>
+      ${top8.map(site=>`
+      <div class="hm-row">
+        <div class="hm-label">${site}</div>
+        ${dates.map(d=>{
+          const c=ALL_ALERTS.filter(a=>a.site===site&&a.date===d).length;
+          const bg=c===0?'#1a1a1a':c<=2?'#3a1010':c<=5?'var(--red-dim)':'var(--red)';
+          return`<div class="hm-cell" style="background:${bg}" title="${site} · ${d} · ${c} missed">${c||''}</div>`;
+        }).join('')}
+      </div>`).join('')}
+      <div style="display:flex;align-items:center;gap:6px;margin-top:10px">
+        <span style="font-size:9px;color:var(--text4)">None</span>
+        <div style="width:14px;height:12px;background:#1a1a1a;border-radius:2px"></div>
+        <div style="width:14px;height:12px;background:#3a1010;border-radius:2px"></div>
+        <div style="width:14px;height:12px;background:var(--red-dim);border-radius:2px"></div>
+        <div style="width:14px;height:12px;background:var(--red);border-radius:2px"></div>
+        <span style="font-size:9px;color:var(--text4)">High</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── CHART ───────────────────────────────────────────────────────────────────
+function drawChart(){
+  const canvas=document.getElementById('trendChart');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const keys=['2026-05-06','2026-05-07','2026-05-08','2026-05-09','2026-05-10','2026-05-11','2026-05-12','2026-05-13'];
+  const labels=keys.map(k=>k.slice(5));
+  const nights=keys.map(k=>(TOTALS[k]||{night:0}).night);
+  const days=keys.map(k=>(TOTALS[k]||{day:0}).day);
+  const W=canvas.offsetWidth||300, H=180;
+  canvas.width=W; canvas.height=H;
+  ctx.clearRect(0,0,W,H);
+  const pad={t:16,r:14,b:26,l:10};
+  const iw=W-pad.l-pad.r, ih=H-pad.t-pad.b;
+  const max=Math.max(...nights,...days,1);
+  const step=iw/(keys.length-1);
+
+  // Grid lines
+  ctx.strokeStyle='#1e1e1e'; ctx.lineWidth=.5;
+  for(let i=0;i<4;i++){const y=pad.t+ih/3*i;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();}
+
+  const drawLine=(vals,col,fill)=>{
+    // Fill
+    ctx.beginPath();
+    vals.forEach((v,i)=>{const x=pad.l+i*step,y=pad.t+ih-(v/max*ih);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+    ctx.lineTo(pad.l+(vals.length-1)*step,pad.t+ih);
+    ctx.lineTo(pad.l,pad.t+ih);
+    ctx.closePath();
+    ctx.fillStyle=fill;ctx.fill();
+    // Line
+    ctx.beginPath();
+    vals.forEach((v,i)=>{const x=pad.l+i*step,y=pad.t+ih-(v/max*ih);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+    ctx.strokeStyle=col;ctx.lineWidth=2;ctx.stroke();
+    // Dots
+    vals.forEach((v,i)=>{
+      const x=pad.l+i*step,y=pad.t+ih-(v/max*ih);
+      ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);
+      ctx.fillStyle=col;ctx.fill();
+      ctx.fillStyle='#888';ctx.font=`9px 'IBM Plex Mono',monospace`;ctx.textAlign='center';
+      ctx.fillText(v,x,y-7);
+    });
+  };
+
+  drawLine(nights,'#7986cb','rgba(121,134,203,.08)');
+  drawLine(days,'#ffa726','rgba(255,167,38,.06)');
+
+  // Labels
+  labels.forEach((l,i)=>{
+    ctx.fillStyle='#333';ctx.font=`9px 'IBM Plex Mono',monospace`;ctx.textAlign='center';
+    ctx.fillText(l,pad.l+i*step,H-6);
+  });
+
+  // Legend
+  ctx.fillStyle='#7986cb';ctx.font=`10px 'IBM Plex Sans',sans-serif`;ctx.textAlign='left';
+  ctx.fillText('■ Night',W-100,14);
+  ctx.fillStyle='#ffa726';
+  ctx.fillText('■ Day',W-55,14);
+}
+
+// ─── EXPORT ──────────────────────────────────────────────────────────────────
+function exportCSV(sh){
+  const rows=sh==='all'?ALL_ALERTS:ALL_ALERTS.filter(a=>a.shift===sh);
+  const hdr='Date,Site,Missed Time,Shift,Guard,Status\n';
+  const body=rows.map(r=>`${r.date},"${r.site}",${r.time},${r.shift},—,Missed`).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([hdr+body],{type:'text/csv'}));
+  a.download=`wiseguy_patrol_${sh}_${TODAY}.csv`;
+  a.click();
+}
+</script>
+</body>
+</html>
